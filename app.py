@@ -17,19 +17,25 @@ def home():
     return render_template('index.html')
 
 
-# 전체글 목록조회(list) 
-@app.route("/bucket", methods=["GET"])
+# 전체글 목록조회(index.html) 
+@app.route("/bucket/list", methods=["GET"])
 def bucket_get():
-    all_buckets = list(db.bucket.find({}, {'_id': False}))
-    return jsonify({'result': all_buckets})
+    all_buckets = list(db.bucket.find({}, {'_id': True, 'bucket': True, 'likeCount': True, 'dislikeCount': True}))
+    result = []
+
+    for item in all_buckets:
+        item['_id'] = str(item['_id'])  # _id 값을 문자열로 변환하여 다시 할당
+        result.append(item)
+
+    return jsonify({'result': result})
 
 
-# 좋아요, 싫어요 카운팅-미완성-index.html 함께 변경중
+# 좋아요, 싫어요 카운팅
 @app.route('/update', methods=['POST'])
 def update_like_dislike():
     item_id = request.form['itemId']
     type = request.form['type']  # likeCount, dislikeCount로 전달됨
-    new_count = int(request.form['count'])  # 변경된 카운트 값
+    new_count = int(request.form['count'])  # 계산할 카운트 값
 
     # MongoDB의 해당 아이템 업데이트
     # $inc 연산자를 사용하여 변경된 값을 기존 값에 더함

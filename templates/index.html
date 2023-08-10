@@ -48,16 +48,18 @@
         }
     </style>
     <script>
+
         $(document).ready(function () {
             show_all_buckets();
         });
 
         function show_all_buckets() {
-            fetch('/bucket')
+            fetch('/bucket/list')
                 .then(res => res.json())
                 .then(data => {
                     let rows = data['result'];
                     $('#bucket-list').empty();
+
                     rows.forEach((a) => {
                         let bucket = a['bucket'];
                         let likeCount = a['likeCount'];
@@ -72,71 +74,70 @@
                             <span class="dislike-count" style="width: 2%;">${dislikeCount}</span>
                         </li>`;
                         $('#bucket-list').append(temp_html);
-
-                        let likeClicked = false;
-                        let dislikeClicked = false;
-
-                        $('.like-icon').click(function () {
-                            if (dislikeClicked) {
-                                alert("중복 선택은 불가능합니다.");
-                                return;
-                            }
-                            likeClicked = !likeClicked;
-                            let likeCountElement = $(this).nextAll('.like-count');
-                            let likeCount = parseInt(likeCountElement.text());
-
-                            if (likeClicked) {
-                                $(this).removeClass('bi-hand-thumbs-up').addClass('bi-hand-thumbs-up-fill');
-                                likeCountElement.text(likeCount + 1);
-                            } else {
-                                $(this).removeClass('bi-hand-thumbs-up-fill').addClass('bi-hand-thumbs-up');
-                                likeCountElement.text(likeCount - 1);
-                            }
-
-                            updateServer('likeCount', a['_id'], likeCountElement.text());
-                        });
-
-                        $('.dislike-icon').click(function () {
-                            if (likeClicked) {
-                                alert("중복 선택은 불가능합니다.");
-                                return;
-                            }
-                            dislikeClicked = !dislikeClicked;
-                            let dislikeCountElement = $(this).nextAll('.dislike-count');
-                            let dislikeCount = parseInt(dislikeCountElement.text());
-
-                            if (dislikeClicked) {
-                                $(this).removeClass('bi-hand-thumbs-down').addClass('bi-hand-thumbs-down-fill');
-                                dislikeCountElement.text(dislikeCount + 1);
-                            } else {
-                                $(this).removeClass('bi-hand-thumbs-down-fill').addClass('bi-hand-thumbs-down');
-                                dislikeCountElement.text(dislikeCount - 1);
-                            }
-
-                            updateServer('dislikeCount', a['_id'], dislikeCountElement.text());
-                        });
-
-                        function updateServer(type, itemId, count) {
-                            let formData = new FormData();
-                            formData.append('type', type);
-                            formData.append('itemId', itemId);
-                            formData.append('count', count);
-
-                            fetch('/update', {
-                                method: 'POST',
-                                body: formData
-                            })
-                                .then(response => response.json())
-                                .then(data => {
-                                    console.log(data.msg);
-                                })
-                                .catch(error => {
-                                    console.error('Error:', error);
-                                });
-                        }
                     });
                 });
         }
+
+        // 좋아요 버튼 클릭 이벤트 처리
+        $(document).on('click', '.like-icon', function () {
+            let likeCountElement = $(this).nextAll('.like-count');
+            let dislikeCountElement = $(this).nextAll('.dislike-icon').nextAll('.dislike-count');
+            let returnCount = 0;
+
+            if ($(this).hasClass('bi-hand-thumbs-up-fill')) {
+                $(this).removeClass('bi-hand-thumbs-up-fill');
+                likeCountElement.text(parseInt(likeCountElement.text()) - 1);
+                returnCount = -1;
+            } else {
+                $(this).addClass('bi-hand-thumbs-up-fill');
+                likeCountElement.text(parseInt(likeCountElement.text()) + 1);
+                returnCount = +1;
+            }
+
+            updateServer('likeCount', $(this).data('id'), returnCount);
+            show_all_buckets(); // 버킷 목록 갱신
+        });
+
+        // 싫어요 버튼 클릭 이벤트 처리
+        $(document).on('click', '.dislike-icon', function () {
+            let dislikeCountElement = $(this).nextAll('.dislike-count');
+            let likeCountElement = $(this).prevAll('.like-icon').prevAll('.like-count');
+            let returnCount = 0;
+
+            if ($(this).hasClass('bi-hand-thumbs-down-fill')) {
+                $(this).removeClass('bi-hand-thumbs-down-fill');
+                dislikeCountElement.text(parseInt(dislikeCountElement.text()) - 1);
+                returnCount = -1;
+            } else {
+                $(this).addClass('bi-hand-thumbs-down-fill');
+                dislikeCountElement.text(parseInt(dislikeCountElement.text()) + 1);
+                returnCount = +1;
+            }
+
+            updateServer('dislikeCount', $(this).data('id'), returnCount);
+            show_all_buckets(); // 버킷 목록 갱신
+        });
+
+        function updateServer(type, itemId, count) {
+            let formData = new FormData();
+            formData.append('type', type);
+            formData.append('itemId', itemId);
+            formData.append('count', count);
+
+            fetch('/update', {
+                method: 'POST',
+                body: formData
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data.msg);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                });
+        }
+
+
     </script>
 </head>
 
