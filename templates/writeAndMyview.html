@@ -27,16 +27,16 @@
 
     .mypic {
       width: 100%;
-      height: 200px;
+      height: 600px;
       background-image: linear-gradient(0deg,
           rgba(0, 0, 0, 0.5),
           rgba(0, 0, 0, 0.5)),
-        url('https://images.unsplash.com/photo-1601024445121-e5b82f020549?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1189&q=80');
+        url('https://img.freepik.com/premium-vector/welcome-to-jeju-island-poster-vector-illustration-travel-destination_94250-465.jpg?w=2000');
       background-position: center;
-      background-size: cover;
+      background-size: auto;
       color: white;
       display: flex;
-      flex-direction: column;
+      flex-direction: column-reverse;
       align-items: center;
       justify-content: center;
     }
@@ -85,80 +85,139 @@
     .mybox>div.form-check>h3.done {
       text-decoration: line-through;
     }
+    .mycommentss{
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .form-control1{
+
+      width: 300px;
+  height: 32px;
+  font-size: 15px;
+  border: 0;
+  border-radius: 15px;
+  outline: none;
+  padding-left: 10px;
+  background-color: rgb(255, 255, 255);
+
+    }
+    
   </style>
 
   <script>
     $(document).ready(function () {
-      show_bucket();
-    });
+            show_bucket();
+        });
 
+        function show_bucket() {
+            $.ajax({
+                type: 'GET',
+                url: '/bucket',
+                data: {},
+                success: function (response) {
+                    let rows = response['buckets'];
 
-    function show_bucket() {
-      $.ajax({
-        type: 'GET',
-        url: '/bucket',
-        data: {},
-        success: function (response) {
-          let rows = response['buckets'];
-          for (let i = 0; i < rows.length; i++) {
-            const bucket = rows[i].bucket;
-            const id = rows[i]._id;
-            const done = rows[i].done;
-            let temp_html = ``;
-            if (done) {
-              temp_html = `
-                  <div class="form-check">
-                    <h3 type="button" onclick="" class="done">${bucket}</h3>
-                  <button id=${id} onclick="delete_bucket(event)" type="button" class="btn-close" aria-label="Close"></button>
-                  <but
-                  </div>
-                `;
-            } else {
-              temp_html = `
-                  <div class="form-check">
-                    <h3 type="button" onclick="" >${bucket}</h3>
-                    <button id=${id} onclick="delete_bucket(event)" type="button" class="btn-close" aria-label="Close"></button>
-                  </div>
-                `;
-            }
-            $('#bucket-list').append(temp_html);
-          }
-        },
-      });
-    }
+                    for (let i = 0; i < rows.length; i++) {
+                        const bucket = rows[i].bucket;
+                        const id = rows[i]._id;
+                        const done = rows[i].done;
 
-    // function show_bucket() {
-    //   fetch('/bucket').then(res => res.json())
-    //   .then(data => {
-    //     let rows = data['result']
-    //     $('#bucket-list').empty()
-    //     rows.forEach((a) => {
-    //       let bucket = a['bucket']
-    //       let temp_html = `<li>
-    //                               <h2>✅ ${bucket}</h2>
-    //                           </li>`
-    //       $('#bucket-list').append(temp_html)
-    //     })
-    //   })
-    // }
+                        let temp_html = ``;
+                        if (done) {
+                            temp_html = `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="${id}" onclick="done_bucket(event)" />
+                                    <h3 class="done">${bucket}</h3>
+                                    <input id="bucket2_${id}" class="form-control1" type="text" placeholder="수정 사항을 입력하세요" value="" />
+                                    <button data-id="${id}" onclick="fix_bucket(event)" type="button" >🛠️</button>
+                                    <button id="${id}" onclick="cancel_bucket(event)" type="button" >🔙</button>
+                                    <button id="${id}" onclick="delete_bucket(event)" type="button" >❌</button>
+                            `;
+                        } else {
+                            temp_html = `
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="${id}" onclick="done_bucket(event)" />
+                                    <h3>${bucket}</h3>
+                                    <button id="${id}" onclick="delete_bucket(event)" type="button" >❌</button>
+                                </div>
+                            `;
+                        }
+                        $('#bucket-list').append(temp_html);
+                    }
+                },
+            });
+        }
 
-    function save_bucket() {
-      let bucket = $('#bucket').val();
-      let email = 'test1@test1.com'  // 테스트용 ID
-      $.ajax({
-        type: 'POST',
-        url: '/bucket/id',
-        data: { bucket_give: bucket, email_give: email},
-        success: function (response) {
-          alert(response['msg']);
-          window.location.reload();
-        },
-      });
-    }
+        function fix_bucket(event) {
+            const id = event.target.getAttribute('data-id');
+            const newBucket = $(`#bucket2_${id}`).val();
 
+            $.ajax({
+                type: 'POST',
+                url: '/bucket/update_bucket',  // 엔드포인트 수정
+                data: { bucketId: id, newBucket: newBucket },  // 파라미터명 수정
+                success: function (response) {
+                    alert(response['msg']);
+                    window.location.reload();
+                },
+            });
+        }
+        function save_bucket() {
+            let bucket = $('#bucket').val();
 
-    let formData = new FormData();
-    formData.append("bucket_give", bucket);
+            $.ajax({
+                type: 'POST',
+                url: '/bucket',
+                data: { bucket_give: bucket },
+                success: function (response) {
+                    alert(response['msg']);
+                    window.location.reload();
+                },
+            });
+        }
+
+        function cancel_bucket(event) {
+            const id = event.target.getAttribute('id');
+
+            $.ajax({
+                type: 'POST',
+                url: '/bucket/cancel',
+                data: { id_give: id },
+                success: function (response) {
+                    window.location.reload();
+                },
+            });
+        }
+
+        function done_bucket(event) {
+            const id = event.target.getAttribute('id');
+
+            $.ajax({
+                type: 'POST',
+                url: '/bucket/done',
+                data: { id_give: id },
+                success: function (response) {
+                    window.location.reload();
+                },
+            });
+        }
+
+        function delete_bucket(event) {
+            const id = event.target.getAttribute('id');
+
+            $.ajax({
+                type: 'POST',
+                url: '/bucket/delete',
+                data: { id_give: id },
+                success: function (response) {
+                    alert(response['msg']);
+                    window.location.reload();
+                },
+            });
+        }
 
     //  추가한 부분
     formData.append("likeCount", 0);
@@ -169,18 +228,6 @@
       window.location.reload();
     });
 
-    function delete_bucket(event) {
-      const id = event.target.getAttribute('id');
-      $.ajax({
-        type: 'POST',
-        url: '/bucket/delete',
-        data: { id_give: id },
-        success: function (response) {
-          alert(response['msg']);
-          window.location.reload();
-        },
-      });
-    }
 
 
   </script>
@@ -189,16 +236,18 @@
 <body>
   <div class="mybox">
     <div class="mybucket">
-      <input id="bucket" class="form-control" type="text" placeholder="이루고 싶은 것을 입력하세요" />
+      <input id="bucket" class="form-control" type="text" placeholder="거덕인지도몰르구여기에나wouldlikehater top one For the chuck wonder like station 동네사람들
+      개드립 - 제주도 찐 사투리" />
       <button onclick="save_bucket()" type="button" class="btn btn-outline-primary">
-        기록하기
+        🌊기록하기🌊
       </button>
     </div>
   </div>
   <div class="mycommentss">
-    <h2>나의 게시글</h2>
+    <h2>나의 게시귤🍊</h2>
   </div>
   <div class="mybox" id="bucket-list">
+
 
   </div>
 
